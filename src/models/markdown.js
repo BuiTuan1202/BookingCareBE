@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     cliniId: DataTypes.INTEGER,
     SpecialtyId: DataTypes.INTEGER,
     doctorId: DataTypes.INTEGER,
+    
   }, {
     sequelize,
     modelName: 'Markdown',

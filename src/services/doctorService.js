@@ -1,44 +1,44 @@
 import db from '../models/index'
 
-let getTopDoctorHomeService =(limit)=>{
-    return new Promise(async (reslove, reject)=>{
+let getTopDoctorHomeService = (limit) => {
+    return new Promise(async (reslove, reject) => {
         try {
             let users = await db.User.findAll({
                 limit: limit,
-                order:[['createdAt', 'DESC']],
-                where: {roleId: 'R2'},
+                order: [['createdAt', 'DESC']],
+                where: { roleId: 'R2' },
                 attributes: {
                     exclude: ['password',]
                 },
-                include:[
-                    {model:db.Allcode, as:'positionData', attributes:['valueVi','valueEn']},
-                    {model:db.Allcode, as:'genderData', attributes:['valueVi','valueEn']}
+                include: [
+                    { model: db.Allcode, as: 'positionData', attributes: ['valueVi', 'valueEn'] },
+                    { model: db.Allcode, as: 'genderData', attributes: ['valueVi', 'valueEn'] }
                 ],
-                raw:true,
-                nest:true
+                raw: true,
+                nest: true
             })
             reslove({
-                errCode:0,
-                mesage:'get user succsess',
+                errCode: 0,
+                mesage: 'get user succsess',
                 data: users
             })
         } catch (e) {
             reject(e)
         }
     })
-} 
-let getAllDoctorService= ()=>{
-    return new Promise(async (reslove, reject)=>{
+}
+let getAllDoctorService = () => {
+    return new Promise(async (reslove, reject) => {
         try {
             let doctors = await db.User.findAll({
-                where: {roleId: 'R2'},
+                where: { roleId: 'R2' },
                 attributes: {
                     exclude: ['password', 'image']
                 },
             })
             reslove({
-                errCode:0,
-                mesage:'get user succsess',
+                errCode: 0,
+                mesage: 'get user succsess',
                 data: doctors
             })
         } catch (e) {
@@ -47,25 +47,41 @@ let getAllDoctorService= ()=>{
     })
 }
 
-let saveInforDoctorService = (InputData)=>{
-    return new Promise(async (reslove, reject)=>{
+let saveInforDoctorService = (InputData) => {
+    return new Promise(async (reslove, reject) => {
         try {
-            if(!InputData.doctorId || !InputData.contentMarkdown || !InputData.contentHTML){
+            if (!InputData.doctorId || !InputData.contentMarkdown || !InputData.contentHTML || !InputData.action) {
                 reslove({
-                    errCode:1,
-                    errMesage:'Missing parameter',
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
                 })
-            }else{
-                 await db.Markdown.create({
-                    contentHTML: InputData.contentHTML,
-                    contentMarkdown:InputData.contentMarkdown,
-                    description:InputData.description,
-                    doctorId:InputData.doctorId,
+            } else {
+                if (InputData.action === 'CREATE') {
+                    await db.Markdown.create({
+                        contentHTML: InputData.contentHTML,
+                        contentMarkdown: InputData.contentMarkdown,
+                        description: InputData.description,
+                        doctorId: InputData.doctorId,
 
-                })
+                    })
+                }
+                else if (InputData.action === 'EDIT') {
+                    let doctorMarkdown = await db.Markdown.findOne({
+                        where: { doctorId: InputData.doctorId },
+                        raw: false
+                    })
+                    if (doctorMarkdown) {
+                        doctorMarkdown.contentHTML = InputData.contentHTML;
+                        doctorMarkdown.contentMarkdown = InputData.contentMarkdown;
+                        doctorMarkdown.description = InputData.description;
+                        doctorMarkdown.updatedAt = new Date()
+                        await doctorMarkdown.save()
+
+                    }
+                }
                 reslove({
-                    errCode:0,
-                    Mesage:'save infor doctor success',
+                    errCode: 0,
+                    Mesage: 'save infor doctor success',
                 })
             }
 
@@ -75,8 +91,50 @@ let saveInforDoctorService = (InputData)=>{
         }
     })
 }
-module.exports ={
+let getDetailDoctorService = (inputid) => {
+    return new Promise(async (reslove, reject) => {
+        try {
+            if (!inputid) {
+                reslove({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            }
+            else {
+                let data = await db.User.findOne({
+                    where: { id: inputid },
+                    attributes: {
+                        exclude: ['password',]
+                    },
+                    include: [
+                        { model: db.Markdown, attributes: ['contentHTML', 'contentMarkdown', 'description'] },
+                        { model: db.Allcode, as: 'positionData', attributes: ['valueVi', 'valueEn'] },
+
+                    ],
+                    raw: false,
+                    nest: true
+
+                })
+                if (data && data.image) {
+                    data.image = new Buffer(data.image, 'base64').toString('binary')
+                }
+                if (!data) data = {}
+                reslove({
+                    errCode: 0,
+                    mesage: 'get doctor by id succsess',
+                    data: data
+                })
+            }
+
+
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+module.exports = {
     getTopDoctorHomeService: getTopDoctorHomeService,
-    getAllDoctorService:getAllDoctorService,
-    saveInforDoctorService:saveInforDoctorService,
+    getAllDoctorService: getAllDoctorService,
+    saveInforDoctorService: saveInforDoctorService,
+    getDetailDoctorService: getDetailDoctorService,
 }

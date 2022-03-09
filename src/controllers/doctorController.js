@@ -1,4 +1,3 @@
-import { json } from 'express/lib/response';
 import doctorService from '../services/doctorService'
 
 
@@ -43,8 +42,24 @@ let saveInforDoctor = async (req, res) => {
 
     }
 }
+
+let getDetailDoctor = async (req, res) => {
+    try {
+        
+        let infor = await doctorService.getDetailDoctorService(req.query.id);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            message: 'Error from server'
+        })
+
+    }
+}
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctor: getAllDoctor,
     saveInforDoctor:saveInforDoctor,
+    getDetailDoctor:getDetailDoctor,
 }

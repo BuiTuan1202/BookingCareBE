@@ -1,5 +1,8 @@
-import db from '../models/index'
+import db from '../models/index';
+require('dotenv').config();
+import _ from 'lodash';
 
+const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 let getTopDoctorHomeService = (limit) => {
     return new Promise(async (reslove, reject) => {
         try {
@@ -132,9 +135,62 @@ let getDetailDoctorService = (inputid) => {
         }
     })
 }
+let bulkCreateScheduleService = (data) => {
+    return new Promise(async (reslove, reject) => {
+        try {
+
+            if (!data.arrSchedule || !data.doctorId || !data.date) {
+                reslove({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            } else {
+
+                let schedule = data.arrSchedule;
+                if (schedule && schedule.length > 0) {
+                    schedule = schedule.map(item => {
+                        item.maxNumber = MAX_NUMBER_SCHEDULE;
+                        return item;
+                    })
+                }
+
+
+                let existing = await db.Schedule.findAll({
+                    where: { doctorId: data.doctorId, date: data.date },
+                    attributes: ['timeType', 'date', "doctorId", 'maxNumber'],
+                    raw: true
+
+                });
+                if (existing && existing.length > 0) {
+                    existing = existing.map(item => {
+                        item.date = new Date(item.date).getTime()
+                        return item;
+                    })
+                }
+                //compare different
+                let toCreate = _.differenceWith(schedule, existing, (a, b) => {
+                    return a.timeType === b.timeType && a.date === b.date;
+                });
+                //create data
+                if (toCreate && toCreate.length > 0) {
+                    await db.Schedule.bulkCreate(toCreate)
+                }
+
+
+                reslove({
+                    errCode: 0,
+                    errMesage: 'ok',
+                })
+            }
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
 module.exports = {
     getTopDoctorHomeService: getTopDoctorHomeService,
     getAllDoctorService: getAllDoctorService,
     saveInforDoctorService: saveInforDoctorService,
     getDetailDoctorService: getDetailDoctorService,
+    bulkCreateScheduleService: bulkCreateScheduleService,
 }

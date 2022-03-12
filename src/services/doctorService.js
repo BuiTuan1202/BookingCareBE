@@ -53,12 +53,18 @@ let getAllDoctorService = () => {
 let saveInforDoctorService = (InputData) => {
     return new Promise(async (reslove, reject) => {
         try {
-            if (!InputData.doctorId || !InputData.contentMarkdown || !InputData.contentHTML || !InputData.action) {
+            if (!InputData.doctorId || !InputData.contentMarkdown
+                || !InputData.contentHTML || !InputData.action
+                || !InputData.selectedPayment || !InputData.selectedProvince
+                || !InputData.nameClinic || !InputData.addressClinic
+                || !InputData.note || !InputData.selectedPrice) {
                 reslove({
                     errCode: 1,
                     errMesage: 'Missing parameter',
                 })
             } else {
+
+                // upsert to doctor Markdown
                 if (InputData.action === 'CREATE') {
                     await db.Markdown.create({
                         contentHTML: InputData.contentHTML,
@@ -81,6 +87,42 @@ let saveInforDoctorService = (InputData) => {
                         await doctorMarkdown.save()
 
                     }
+                }
+
+                //upsert to doctorInfo table
+                let doctorInfo = await db.DoctorInfo.findOne({
+                    where: {
+                        doctorId: InputData.doctorId,
+                    },
+                    raw: false
+                })
+                // || !selectedPayment || !
+                // || ! || !
+                // || ! || !) {
+                if (doctorInfo) {
+                    //update
+                    doctorInfo.doctorId = InputData.doctorId;
+                    doctorInfo.priceId = InputData.selectedPrice;
+                    doctorInfo.paymentId = InputData.selectedPayment;
+                    doctorInfo.provinceId = InputData.selectedProvince;
+                    doctorInfo.nameClinic = InputData.nameClinic;
+                    doctorInfo.addressClinic = InputData.addressClinic;
+                    doctorInfo.note = InputData.note;
+
+                    await doctorInfo.save()
+                }
+                else {
+                    //create
+                    await db.DoctorInfo.create({
+                        doctorId: InputData.doctorId,
+                        priceId: InputData.selectedPrice,
+                        paymentId: InputData.selectedPayment,
+                        provinceId: InputData.selectedProvince,
+                        nameClinic: InputData.nameClinic,
+                        addressClinic: InputData.addressClinic,
+                        note: InputData.note,
+
+                    })
                 }
                 reslove({
                     errCode: 0,
@@ -112,6 +154,17 @@ let getDetailDoctorService = (inputid) => {
                     include: [
                         { model: db.Markdown, attributes: ['contentHTML', 'contentMarkdown', 'description'] },
                         { model: db.Allcode, as: 'positionData', attributes: ['valueVi', 'valueEn'] },
+                        {
+                            model: db.DoctorInfo,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            },
+                            include: [
+                                { model: db.Allcode, as: 'priceData', attributes: ['valueVi', 'valueEn'] },
+                                { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
+                                { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
+                            ]
+                        },
 
                     ],
                     raw: false,

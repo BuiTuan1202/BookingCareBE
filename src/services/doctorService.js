@@ -4,7 +4,7 @@ import _ from 'lodash';
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 let getTopDoctorHomeService = (limit) => {
-    return new Promise(async (reslove, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             let users = await db.User.findAll({
                 limit: limit,
@@ -20,7 +20,7 @@ let getTopDoctorHomeService = (limit) => {
                 raw: true,
                 nest: true
             })
-            reslove({
+            resolve({
                 errCode: 0,
                 mesage: 'get user succsess',
                 data: users
@@ -31,7 +31,7 @@ let getTopDoctorHomeService = (limit) => {
     })
 }
 let getAllDoctorService = () => {
-    return new Promise(async (reslove, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             let doctors = await db.User.findAll({
                 where: { roleId: 'R2' },
@@ -39,7 +39,7 @@ let getAllDoctorService = () => {
                     exclude: ['password', 'image']
                 },
             })
-            reslove({
+            resolve({
                 errCode: 0,
                 mesage: 'get user succsess',
                 data: doctors
@@ -51,14 +51,14 @@ let getAllDoctorService = () => {
 }
 
 let saveInforDoctorService = (InputData) => {
-    return new Promise(async (reslove, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             if (!InputData.doctorId || !InputData.contentMarkdown
                 || !InputData.contentHTML || !InputData.action
                 || !InputData.selectedPayment || !InputData.selectedProvince
                 || !InputData.nameClinic || !InputData.addressClinic
                 || !InputData.note || !InputData.selectedPrice) {
-                reslove({
+                resolve({
                     errCode: 1,
                     errMesage: 'Missing parameter',
                 })
@@ -124,7 +124,7 @@ let saveInforDoctorService = (InputData) => {
 
                     })
                 }
-                reslove({
+                resolve({
                     errCode: 0,
                     Mesage: 'save infor doctor success',
                 })
@@ -136,18 +136,18 @@ let saveInforDoctorService = (InputData) => {
         }
     })
 }
-let getDetailDoctorService = (inputid) => {
-    return new Promise(async (reslove, reject) => {
+let getDetailDoctorService = (inputId) => {
+    return new Promise(async (resolve, reject) => {
         try {
-            if (!inputid) {
-                reslove({
+            if (!inputId) {
+                resolve({
                     errCode: 1,
                     errMesage: 'Missing parameter',
                 })
             }
             else {
                 let data = await db.User.findOne({
-                    where: { id: inputid },
+                    where: { id: inputId },
                     attributes: {
                         exclude: ['password',]
                     },
@@ -175,7 +175,7 @@ let getDetailDoctorService = (inputid) => {
                     data.image = new Buffer(data.image, 'base64').toString('binary')
                 }
                 if (!data) data = {}
-                reslove({
+                resolve({
                     errCode: 0,
                     mesage: 'get doctor by id succsess',
                     data: data
@@ -189,11 +189,11 @@ let getDetailDoctorService = (inputid) => {
     })
 }
 let bulkCreateScheduleService = (data) => {
-    return new Promise(async (reslove, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
 
             if (!data.arrSchedule || !data.doctorId || !data.date) {
-                reslove({
+                resolve({
                     errCode: 1,
                     errMesage: 'Missing parameter',
                 })
@@ -232,7 +232,7 @@ let bulkCreateScheduleService = (data) => {
                 }
 
 
-                reslove({
+                resolve({
                     errCode: 0,
                     errMesage: 'ok',
                 })
@@ -243,10 +243,10 @@ let bulkCreateScheduleService = (data) => {
     })
 }
 let getScheduleDoctorByDateService = (doctorId, date) => {
-    return new Promise(async (reslove, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             if (!doctorId || !date) {
-                reslove({
+                resolve({
                     errCode: 1,
                     errMesage: 'Missing parameter',
                 })
@@ -263,9 +263,93 @@ let getScheduleDoctorByDateService = (doctorId, date) => {
                     nest: true
                 })
                 if (!data) data = []
-                reslove({
+                resolve({
                     errCode: 0,
                     errMesage: 'get schedule doctor by id success',
+                    data: data
+                })
+            }
+        } catch (e) {
+            reject(e)
+
+        }
+    })
+}
+
+let getExtraInfoByIdService = (doctorId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId) {
+                resolve({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            } else {
+                let data = await db.DoctorInfo.findOne({
+                    where: { doctorId: doctorId },
+                    attributes: {
+                        exclude: ['id', 'doctorId']
+                    },
+                    include: [
+                        { model: db.Allcode, as: 'priceData', attributes: ['valueVi', 'valueEn'] },
+                        { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
+                        { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
+                    ]
+                })
+                if (!data) data = {}
+                resolve({
+                    errCode: 0,
+                    message: 'get extra info by doctorId success',
+                    data: data
+                })
+            }
+        } catch (e) {
+            reject(e)
+
+        }
+    })
+}
+let getProfileDoctorByIdService = (inputId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!inputId) {
+                resolve({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            } else {
+                let data = await db.User.findOne({
+                    where: { id: inputId },
+                    attributes: {
+                        exclude: ['password',]
+                    },
+                    include: [
+                        { model: db.Markdown, attributes: ['description'] },
+                        { model: db.Allcode, as: 'positionData', attributes: ['valueVi', 'valueEn'] },
+                        {
+                            model: db.DoctorInfo,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            },
+                            include: [
+                                { model: db.Allcode, as: 'priceData', attributes: ['valueVi', 'valueEn'] },
+                                { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
+                                { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
+                            ]
+                        },
+
+                    ],
+                    raw: false,
+                    nest: true
+
+                })
+                if (data && data.image) {
+                    data.image = new Buffer(data.image, 'base64').toString('binary')
+                }
+                if (!data) data = {}
+                resolve({
+                    errCode: 0,
+                    message: 'get doctor by id succsess',
                     data: data
                 })
             }
@@ -282,4 +366,6 @@ module.exports = {
     getDetailDoctorService: getDetailDoctorService,
     bulkCreateScheduleService: bulkCreateScheduleService,
     getScheduleDoctorByDateService: getScheduleDoctorByDateService,
+    getExtraInfoByIdService: getExtraInfoByIdService,
+    getProfileDoctorByIdService: getProfileDoctorByIdService
 }

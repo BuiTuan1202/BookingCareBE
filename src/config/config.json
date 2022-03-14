@@ -5,10 +5,11 @@
     "database": "buivantuan",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "loging": false,
-
-   
-    "timezone": "+07:00"
+    "logging": false,
+    "timezone": "+07:00",
+    "query": {
+      "raw": true
+    }
   },
   "test": {
     "username": "root",

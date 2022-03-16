@@ -181,6 +181,7 @@ let getDetailDoctorService = (inputId) => {
                                 { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
                                 { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
                                 { model: db.Specialty, as: 'specialtyData', attributes: ['name'] },
+                                { model: db.Clinic, as: 'clinicData', attributes: ['name'] },
                             ]
                         },
 

@@ -49,18 +49,32 @@ let getAllDoctorService = () => {
         }
     })
 }
-
+let checkRequiredFields = (inputData) => {
+    let arrFields = ['doctorId', 'contentMarkdown', 'contentHTML', 'action',
+        'selectedPayment', 'selectedProvince', 'nameClinic', 'addressClinic',
+        'note', 'selectedPrice', 'specialtyId']
+    let isValid = true;
+    let element = ''
+    for (let i = 0; i < arrFields.length; i++) {
+        if (!inputData[arrFields[i]]) {
+            isValid = false;
+            element = arrFields[i]
+            break;
+        }
+    }
+    return {
+        isValid: isValid,
+        element: element
+    }
+}
 let saveInforDoctorService = (InputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!InputData.doctorId || !InputData.contentMarkdown
-                || !InputData.contentHTML || !InputData.action
-                || !InputData.selectedPayment || !InputData.selectedProvince
-                || !InputData.nameClinic || !InputData.addressClinic
-                || !InputData.note || !InputData.selectedPrice) {
+            let checkObj = checkRequiredFields(InputData)
+            if (checkObj === false) {
                 resolve({
                     errCode: 1,
-                    errMesage: 'Missing parameter',
+                    errMessage: `Missing parameter: ${checkObj.element}`,
                 })
             } else {
 
@@ -96,9 +110,7 @@ let saveInforDoctorService = (InputData) => {
                     },
                     raw: false
                 })
-                // || !selectedPayment || !
-                // || ! || !
-                // || ! || !) {
+
                 if (doctorInfo) {
                     //update
                     doctorInfo.doctorId = InputData.doctorId;
@@ -108,6 +120,9 @@ let saveInforDoctorService = (InputData) => {
                     doctorInfo.nameClinic = InputData.nameClinic;
                     doctorInfo.addressClinic = InputData.addressClinic;
                     doctorInfo.note = InputData.note;
+                    doctorInfo.specialtyId = InputData.specialtyId;
+                    doctorInfo.clinicId = InputData.clinicId;
+
 
                     await doctorInfo.save()
                 }
@@ -121,6 +136,8 @@ let saveInforDoctorService = (InputData) => {
                         nameClinic: InputData.nameClinic,
                         addressClinic: InputData.addressClinic,
                         note: InputData.note,
+                        specialtyId: InputData.specialtyId,
+                        clinicId: InputData.clinicId,
 
                     })
                 }
@@ -163,6 +180,7 @@ let getDetailDoctorService = (inputId) => {
                                 { model: db.Allcode, as: 'priceData', attributes: ['valueVi', 'valueEn'] },
                                 { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
                                 { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
+                                { model: db.Specialty, as: 'specialtyData', attributes: ['name'] },
                             ]
                         },
 
@@ -295,7 +313,9 @@ let getExtraInfoByIdService = (doctorId) => {
                         { model: db.Allcode, as: 'priceData', attributes: ['valueVi', 'valueEn'] },
                         { model: db.Allcode, as: 'provinceData', attributes: ['valueVi', 'valueEn'] },
                         { model: db.Allcode, as: 'paymentData', attributes: ['valueVi', 'valueEn'] },
-                    ]
+                    ],
+                    raw: true,
+                    nest: true
                 })
                 if (!data) data = {}
                 resolve({

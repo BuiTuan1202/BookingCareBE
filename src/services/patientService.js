@@ -76,7 +76,10 @@ let postVerifyBookingAppointmentService = (data) => {
                         statusId: 'S1'
                     },
                     raw: false
+                }, () => {
+                    console.log('check appoiment', appointment);
                 })
+
                 if (appointment) {
                     appointment.statusId = 'S2'
                     await appointment.save();

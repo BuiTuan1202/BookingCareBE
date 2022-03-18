@@ -60,9 +60,58 @@ let getBodyHTMLEmail = (dataSend) => {
     return result;
 }
 
+let sendAttachment = async (dataSend) => {
 
+    // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: process.env.EMAIL_APP, // generated ethereal user
+            pass: process.env.EMAIL_APP_PASSWORD, // generated ethereal password
+        },
+    });
 
-sendSimpleEmail().catch(console.error);
+    // send mail with defined transport object
+    let info = await transporter.sendMail({
+        from: '"Booking Care" <buivantuan12022000@gmail.com>', // sender address
+        to: dataSend.email, // list of receivers
+        subject: "Thông báo hoàn thành khám bệnh", // Subject line
+        html: getBodyHTMLEmailBill(dataSend), // html body
+        attachments: [
+            {   // define custom content type for the attachment
+                filename: `Bill-${dataSend.patientId}-${new Date().getTime()}.png`,
+                content: dataSend.imgBase64.split("base64")[1],
+                encoding: 'base64'
+            },
+        ],
+    });
+}
+let getBodyHTMLEmailBill = (dataSend) => {
+    let result = '';
+    if (dataSend.language === 'vi') {
+        result = `
+        <h3> Xin chào ${dataSend.patientName},</h3>
+        <p>Bạn nhận được email này vì đã hoàn thành quy trình khám bệnh tại BookingCare</p>
+        <p>Thông tin đơn thuốc/ hóa đơn được gửi trong file đính kèm</p>
+     
+        <div>Xin chân thành cảm ơn</div>
+        `
+    }
+    if (dataSend.language === 'en') {
+        result = `
+        <h3> Dear ${dataSend.patientName},</h3>
+        <p>You received this email because you have completed your medical examination at BookingCare</p>
+        <p>Prescription/invoice information sent in attachments</p>
+
+        <div>Thank you very much.</div>
+        `
+    }
+    return result;
+}
+
 module.exports = {
-    sendSimpleEmail: sendSimpleEmail
+    sendSimpleEmail: sendSimpleEmail,
+    sendAttachment: sendAttachment
 }

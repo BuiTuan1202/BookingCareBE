@@ -1,6 +1,7 @@
 import db from '../models/index';
 require('dotenv').config();
 import _ from 'lodash';
+import emailService from '../services/emailService'
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 let getTopDoctorHomeService = (limit) => {
@@ -191,7 +192,7 @@ let getDetailDoctorService = (inputId) => {
 
                 })
                 if (data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary')
+                    data.image = new Buffer.from(data.image, 'base64').toString('binary')
                 }
                 if (!data) data = {}
                 resolve({
@@ -366,12 +367,96 @@ let getProfileDoctorByIdService = (inputId) => {
 
                 })
                 if (data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary')
+                    data.image = new Buffer.from(data.image, 'base64').toString('binary')
                 }
                 if (!data) data = {}
                 resolve({
                     errCode: 0,
                     message: 'get doctor by id succsess',
+                    data: data
+                })
+            }
+        } catch (e) {
+            reject(e)
+
+        }
+    })
+}
+let getListPatientForDoctorService = (doctorId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId || !date) {
+                resolve({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            } else {
+                let data = await db.Booking.findAll({
+                    where: {
+                        statusId: 'S2',
+                        doctorId: doctorId,
+                        date: date
+
+                    },
+                    include: [
+                        {
+                            model: db.User, as: 'patientData',
+                            attributes: ['email', 'firstName', 'address', 'gender', 'phonenumber'],
+
+                            include: [
+                                { model: db.Allcode, as: 'genderData', attributes: ['valueVi', 'valueEn'] },
+
+                            ]
+                        },
+                        { model: db.Allcode, as: 'timeTypeDataPatient', attributes: ['valueVi', 'valueEn'] },
+
+                    ],
+                    raw: true,
+                    nest: true
+                })
+                resolve({
+                    errCode: 0,
+                    message: 'get doctor by id succsess',
+                    data: data
+                })
+            }
+        } catch (e) {
+            reject(e)
+
+        }
+    })
+}
+let sendBillService = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.email || !data.doctorId || !data.patientId || !data.timeType) {
+                resolve({
+                    errCode: 1,
+                    errMesage: 'Missing parameter',
+                })
+            } else {
+                // update booking status
+                let appointment = await db.Booking.findOne({
+                    where: {
+                        doctorId: data.doctorId,
+                        patientId: data.patientId,
+                        timeType: data.timeType,
+                        statusId: 'S2'
+                    },
+                    raw: false,
+                })
+                if (appointment) {
+                    appointment.statusId = 'S3';
+                    await appointment.save()
+
+                }
+                // send email bill
+                await emailService.sendAttachment(
+                    data
+                )
+                resolve({
+                    errCode: 0,
+                    message: 'send bill succsess',
                     data: data
                 })
             }
@@ -389,5 +474,7 @@ module.exports = {
     bulkCreateScheduleService: bulkCreateScheduleService,
     getScheduleDoctorByDateService: getScheduleDoctorByDateService,
     getExtraInfoByIdService: getExtraInfoByIdService,
-    getProfileDoctorByIdService: getProfileDoctorByIdService
+    getProfileDoctorByIdService: getProfileDoctorByIdService,
+    getListPatientForDoctorService: getListPatientForDoctorService,
+    sendBillService: sendBillService,
 }

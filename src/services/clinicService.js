@@ -34,7 +34,7 @@ let getAllClinicService = () => {
             if (data && data.length > 0) {
                 data.map(item => {
 
-                    item.image = new Buffer(item.image, 'base64').toString('binary')
+                    item.image = new Buffer.from(item.image, 'base64').toString('binary')
                     return item
                 })
             }
@@ -66,7 +66,7 @@ let getDetailClinicByIdService = (inputId) => {
                     attributes: ['image', 'name', 'address', 'descriptionHTML', 'descriptionMarkdown'],
                 })
                 if (data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary')
+                    data.image = new Buffer.from(data.image, 'base64').toString('binary')
                 }
                 if (data) {
                     let doctorClinic = [];
